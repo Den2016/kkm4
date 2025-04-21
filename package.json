@@ -1,0 +1,11 @@
+{
+  "name": "kkm4",
+  "version": "1.0.0",
+  "description": "сервер для обслуживания запросов к ККМ Штрих-М",
+  "main": "index.js",
+  "author": "Den2016",
+  "license": "MIT",
+  "devDependencies": {
+    "electron-builder": "^26.0.12"
+  }
+}
