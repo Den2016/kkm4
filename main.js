@@ -80,11 +80,11 @@ app.whenReady().then(() => {
 
 function createWindow() {
     mainWindow = new BrowserWindow({
-        width: 400,
-        height: 300,
+        width: 600,
+        height: 600,
         show: false,
-        frame: false,
-        transparent: true,
+//        frame: false,
+//        transparent: true,
         icon: path.join(__dirname, 'tray-icon.png'),
         webPreferences: {
             nodeIntegration: true,
