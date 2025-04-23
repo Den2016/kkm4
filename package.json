@@ -2,10 +2,21 @@
   "name": "kkm4",
   "version": "1.0.0",
   "description": "сервер для обслуживания запросов к ККМ Штрих-М",
-  "main": "index.js",
+  "main": "main.js",
   "author": "Den2016",
   "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "dependencies": {
+    "electron": "^35.2.0",
+    "electron-store": "^10.0.1",
+    "ffi-rs": "^1.2.10",
+    "restify": "^11.1.0"
+  },
   "devDependencies": {
-    "electron-builder": "^26.0.12"
+    "node-gyp-build": "4.8.0"
   }
 }

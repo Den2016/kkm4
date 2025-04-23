@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>KKM Server</title>
+    <style>
+        body {
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            text-align: center;
+            font-family: sans-serif;
+        }
+    </style>
+</head>
+<body>
+<h1>KKM Server</h1>
+<form id="settings-form">
+    <label for="library-path">Путь к библиотеке drvfr.dll:</label><br />
+    <input type="text" id="library-path" placeholder="/путь/к/binary.dll" /><br /><br />
+    <button type="submit">Сохранить настройки</button>
+</form>
+
+<script src="renderer.js"></script>
+</body>
+</html>
