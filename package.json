@@ -4,14 +4,12 @@
   "description": "сервер для обслуживания запросов к ККМ Штрих-М",
   "main": "main.js",
   "author": "Den2016",
-  "license": "MIT",
-  "type": "module",
+  "license": "MIT",  
   "scripts": {
     "start": "electron .",
     "build": "electron-builder"
   },
   "dependencies": {
-    "electron": "^35.2.0",
     "electron-store": "^10.0.1",
     "ffi-rs": "^1.2.10",
     "restify": "^11.1.0"

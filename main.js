@@ -1,5 +1,5 @@
 // main.js
-import { app, BrowserWindow, Tray, Menu, dialog } from 'electron';
+import { app, BrowserWindow, Tray, Menu, dialog, session } from 'electron';
 import path from 'path';
 import Store from 'electron-store'; // Импортируем Store отдельно
 import ffi from 'ffi-rs';
@@ -7,10 +7,15 @@ import restify from 'restify';
 import { ipcMain } from 'electron'; // Так тоже нужно использовать import
 import { URL } from 'url';
 import { fileURLToPath } from 'url';
+//const ffi = require('ffi-rs');
+
+
+console.log(Object.keys(require('ffi-rs')));
+
+const { DynamicLibrary } = ffi;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 // Хранилище настроек
 const store = new Store({
     schema: {
@@ -34,7 +39,7 @@ let drvfrLib = null;
 
 // Функции из библиотеки drvfr.dll
 function loadDrvfrFunctions(libPath) {
-    drvfrLib = ffi.DynamicLibrary.from_path(libPath);
+    drvfrLib = new DynamicLibrary(libPath);
 
     // Определяем используемые функции
     const ConnectToKKT = drvfrLib.function('ConnectToKKT', 'i32', ['*u8']);
@@ -51,12 +56,15 @@ function loadDrvfrFunctions(libPath) {
 // Обновляем настройки и перезагружаем библиотеку
 function updateSettings(settings) {
     store.set(settings);
+
+    console.log('Updated',settings);
     reloadDrvfrLibrary();
 }
 
 // Функция для перезагрузки библиотеки
 function reloadDrvfrLibrary() {
     const libPath = store.get('libraryPath');
+    console.log('libraryPath', libPath);
     if(libPath && libPath.length > 0) {
         drvfrLib?.unload(); // Очищаем старую библиотеку
         drvfrLib = loadDrvfrFunctions(libPath);
@@ -71,6 +79,18 @@ let mainWindow;
 let trayIcon;
 
 app.whenReady().then(() => {
+    // Получаем сессию текущего окна
+    const ses = session.defaultSession || session.fromPartition('persist:name');
+    ses.webRequest.onBeforeSendHeaders((details, callback) => {
+        details.requestHeaders['Cache-Control'] = 'no-cache';
+        delete details.requestHeaders['If-Modified-Since'];
+        delete details.requestHeaders['If-Match'];
+        delete details.requestHeaders['If-None-Match'];
+        delete details.requestHeaders['If-Range'];
+        
+        callback({ cancel: false, requestHeaders: details.requestHeaders });
+    });
+
     createTray();
     createWindow();
 
@@ -78,25 +98,44 @@ app.whenReady().then(() => {
     reloadDrvfrLibrary();
 });
 
+// Главный процесс (main.js)
+ipcMain.on('get-settings', (event, arg) => {
+    console.log(arg.text); // Сообщение от рендера
+    event.reply('reply-from-main', store.get('libraryPath'));
+});
+ipcMain.on('update-settings', (event, arg) => {
+    console.log('update-settings');
+    console.log(arg); // Сообщение от рендера
+    updateSettings(arg);
+});
+
 function createWindow() {
+    const preloadUrl = `${path.resolve(__dirname, 'preload.js')}`;
+    console.log('Preload URL:', preloadUrl);
+
     mainWindow = new BrowserWindow({
-        width: 600,
-        height: 600,
+        width: 1600,
+        height: 1000,
         show: false,
 //        frame: false,
 //        transparent: true,
         icon: path.join(__dirname, 'tray-icon.png'),
         webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false
+            nodeIntegration: false,
+            contextIsolation: true,
+            cache: false, // отключаем кэширование
+            preload: preloadUrl, //__dirname + '\\src\\preload.js', // Предзагружаем скрипт
+            devTools: true // Разрешаем использование DevTools
         }
     });
 
-    mainWindow.loadFile('renderer.html');
-
+    mainWindow.loadFile('src/renderer.html');
+    mainWindow.webContents.openDevTools(); // Открываем инструменты разработчика автоматически
     mainWindow.on('close', event => {
-        event.preventDefault();
-        mainWindow.hide();
+        if(!app.isQuiting) {
+            event.preventDefault();
+            mainWindow.hide();
+        }
     });
 }
 
@@ -105,7 +144,10 @@ function createTray() {
 
     const contextMenu = Menu.buildFromTemplate([
         { label: 'Показать приложение', click: () => mainWindow.show() },
-        { label: 'Выход', click: () => app.quit() }
+        { label: 'Выход', click: () => {
+            app.isQuiting = true;
+            app.quit();
+        } }
     ]);
 
     trayIcon.setToolTip('KKM Server');
